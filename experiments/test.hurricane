@@ -22,3 +22,13 @@ def conn-∧ (A : U) (a b : A) (p : Path A a b) (i : I) : Path A a (p @ i) :=
 
 def conn-∨ (A : U) (a b : A) (p : Path A a b) (i : I) : Path A (p @ i) b :=
 <j> p @ join i j
+
+def Iso (A B : U) :=
+Σ (f : A → B) (g : B → A), (Π (x : A), Path A (g (f x)) x) × (Π (x : B), Path B (f (g x)) x)
+
+def Iso→Path (A B : U) (e : Iso A B) : PathP (λ (_ : I), U) A B :=
+<i> iso A B e.1 e.2.1 e.2.2.1 e.2.2.2 i
+
+def coe-Iso (A B : U) (e : Iso A B) (x : A) :
+  Path B (coe (λ (i : I), Iso→Path A B e @ i) right x) (e.1 x) :=
+<_> e.1 x

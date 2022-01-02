@@ -63,8 +63,8 @@ and appFormula v x = match v with
 
 and coe p =
   let i = freshName "ι" in let t = app (p, Var (i, VI)) in
-  (* coe (λ x, A) i ~> λ y, y when x ∉ FV(A) *)
-  if not (mem i t) then idfun t else VCoe p
+  (* coe (λ x, A) i ~> λ j y, y when x ∉ FV(A) *)
+  if not (mem i t) then VLam (VI, (Irrefutable, fun _ -> idfun t)) else VCoe p
 
 and closByVal ctx p t e v = traceClos e p v;
   (* dirty hack to handle free variables introduced by type checker *)
@@ -105,6 +105,20 @@ and app (f, x) = match f, x with
 
   (* coe A left ~> λ x, x *)
   | VCoe t, VLeft -> idfun (app (t, VLeft))
+  (* iso A B f g p q left ~> A *)
+  | VApp (VApp (VApp (VApp (VApp (VIso a, _), _), _), _), _), VLeft -> a
+  (* iso A B f g p q right ~> B *)
+  | VApp (VApp (VApp (VApp (VApp (VIso _, b), _), _), _), _), VRight -> b
+
+  (* coe (iso A B f g p q) right ~> f *)
+  | VCoe p, VRight -> let i = freshName "ι" in
+    begin match app (p, Var (i, VI)) with
+      | VApp (VApp (VApp (VApp (VApp (VApp (VIso a, b), f), g), p), q), j) ->
+        if not (mem i a || mem i b || mem i f
+             || mem i g || mem i p || mem i q) && convVar i j
+        then f else VApp (VCoe p, VRight)
+      | _ -> VApp (VCoe p, VRight)
+    end
   | _, _ -> VApp (f, x)
 
 and app2 f x y = app (app (f, x), y)
@@ -229,6 +243,7 @@ and lookup (x : name) (ctx : ctx) = match Env.find_opt x ctx with
 
 and check ctx (e0 : exp) (t0 : value) =
   traceCheck e0 t0; try match e0, t0 with
+  | EHole, v -> traceHole v ctx
   | ELam (a, (p, b)), VPi (t, (_, g)) ->
     ignore (extKan (infer ctx a)); eqNf (eval a ctx) t;
     let x = Var (p, t) in let ctx' = upLocal ctx p t x in check ctx' b (g x)
@@ -245,7 +260,6 @@ and check ctx (e0 : exp) (t0 : value) =
     let ctx' = upLocal ctx i VI v in
     check ctx' (rbV (act e x ctx')) (app (p, v));
     eqNf v0 u0; eqNf v1 u1
-  | EHole, v -> traceHole v ctx
   | e, t -> eqNf (infer ctx e) t
   with ex -> Printf.printf "When trying to typecheck\n  %s\nAgainst type\n  %s\n" (showExp e0) (showValue t0); raise ex
 
