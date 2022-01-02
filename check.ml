@@ -286,7 +286,7 @@ and infer ctx e : value = traceInfer e; try match e with
   | EPathP e -> let k = infer ctx e in let (t, (p, g)) = extPi k in
     let n = extKan (g (Var (p, t))) in eqNf k (implv VI (VKan n)); inferPathP n (eval e ctx)
   | EAppFormula (f, x) -> check ctx x VI;
-    let (p, _, _) = extPathP (infer ctx (rbV (eval f ctx))) in app (p, eval x ctx)
+    let (p, _, _) = extPathP (infer ctx f) in app (p, eval x ctx)
   | EPLam f -> let g = eval f ctx in
     let i = freshName "ι" in let v = Var (i, VI) in
     let ctx' = upLocal ctx i VI v in
