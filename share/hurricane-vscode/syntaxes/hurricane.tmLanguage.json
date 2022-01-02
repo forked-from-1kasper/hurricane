@@ -1,0 +1,42 @@
+{
+    "name": "hurricane",
+    "fileTypes": [
+        "hurricane"
+    ],
+    "patterns": [
+        {
+            "begin": "{-",
+            "end": "-}",
+            "name": "comment.block.hurricane"
+        },
+        {
+            "match": "--.*$",
+            "name": "comment.line.double-dash.hurricane"
+        },
+        {
+            "match": "(?<=^|[\\s()])(option|axiom|postulate|def|definition|theorem|lemma|corollary|proposition|import|with|module|where)(?=$|[\\s()])",
+            "name": "keyword.other.hurricane"
+        },
+        {
+            "match": "(?<=^|[\\s(),])(λ|Σ|Π|forall|sigma|left|right|PathP|)(?=$|[\\s(),])",
+            "name": "keyword.control.hurricane"
+        },
+        {
+            "match": "(?<=^|[\\s(),])([U][₀₁₂₃₄₅₆₇₈₉]*)(?=$|[\\s(),])",
+            "name": "keyword.other.hurricane"
+        },
+        {
+            "match": "(?<=^|[\\s()])(->|→|\\|->|:=|≔|≜|≝|:|\\*|)(?=$|[\\s()])",
+            "name": "keyword.other.hurricane"
+        },
+        {
+            "match": "(?<=^|[\\s()])(-)",
+            "name": "keyword.other.hurricane"
+        },
+        {
+            "match": "[><]",
+            "name": "keyword.other.hurricane"
+        }
+    ],
+    "scopeName": "source.hurricane"
+}

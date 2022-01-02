@@ -1,0 +1,6 @@
+module test where
+
+def id (A : U) : U := A
+def idfun (A : U) (a : A) : A := a
+
+def ∘ (A B C : U) (f : B → C) (g : A → B) : A → C := λ (x : A), f (g x)
