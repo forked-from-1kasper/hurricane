@@ -15,6 +15,8 @@ let vsnd : value -> value = function
   | VPair (_, u) -> u
   | v            -> VSnd v
 
+let idfun t = VLam (t, (freshName "x", fun x -> x))
+
 (* Evaluator *)
 let rec eval (e0 : exp) (ctx : ctx) = traceEval e0; match e0 with
   | EKan u                -> VKan u
@@ -44,7 +46,10 @@ let rec eval (e0 : exp) (ctx : ctx) = traceEval e0; match e0 with
   | ERight                -> VRight
   | ECoe e                -> coe (eval e ctx)
 
-and coe p = VCoe p
+and coe p =
+  let i = freshName "ι" in let t = app (p, Var (i, VI)) in
+  (* coe (λ x, A) i ~> λ y, y when x ∉ FV(A) *)
+  if not (mem i t) then idfun t else VCoe p
 
 and closByVal ctx p t e v = traceClos e p v;
   (* dirty hack to handle free variables introduced by type checker *)
@@ -83,6 +88,8 @@ and app (f, x) = match f, x with
   (* Z-pred (Z-succ z) ~> z *)
   | VZPred, VApp (VZSucc, z) -> z
 
+  (* coe A left ~> λ x, x *)
+  | VCoe t, VLeft -> idfun (app (t, VLeft))
   | _, _ -> VApp (f, x)
 
 and app2 f x y = app (app (f, x), y)
@@ -241,8 +248,6 @@ and mem x = function
   | VZInd e | VBotRec e | VCoe e -> mem x e
 
   | VPair (a, b) | VApp (a, b) -> mem x a || mem x b
-
-and mem2 x y v = mem x v || mem y v
 
 (* Readback *)
 let rec rbV v : exp = traceRbV v; match v with
