@@ -10,6 +10,10 @@ let extPi : value -> value * clos = function
   | VPi (t, g) -> (t, g)
   | u -> raise (ExpectedPi u)
 
+let extPathP = function
+  | VApp (VApp (VPathP v, u0), u1) -> (v, u0, u1)
+  | v                              -> raise (ExpectedPath v)
+
 let extSig : value -> value * clos = function
   | VSig (t, g) -> (t, g)
   | u -> raise (ExpectedSig u)
@@ -67,6 +71,8 @@ let rec salt (ns : name Env.t) : exp -> exp = function
   | ELeft                 -> ELeft
   | ERight                -> ERight
   | ECoe e                -> ECoe (salt ns e)
+  | EPLam e               -> EPLam (salt ns e)
+  | EAppFormula (p, i)   -> EAppFormula (salt ns p, salt ns i)
 
 and saltTele ctor ns p a b =
   let x = fresh p in ctor x (salt ns a) (salt (Env.add p x ns) b)

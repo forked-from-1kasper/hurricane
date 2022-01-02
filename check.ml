@@ -17,6 +17,8 @@ let vsnd : value -> value = function
 
 let idfun t = VLam (t, (freshName "x", fun x -> x))
 
+let freshDim () = Var (freshName "ι", VI)
+
 (* Evaluator *)
 let rec eval (e0 : exp) (ctx : ctx) = traceEval e0; match e0 with
   | EKan u                -> VKan u
@@ -46,6 +48,17 @@ let rec eval (e0 : exp) (ctx : ctx) = traceEval e0; match e0 with
   | ERight                -> VRight
   | ECoe e                -> coe (eval e ctx)
   | EPathP e              -> VPathP (eval e ctx)
+  | EPLam e               -> VPLam (eval e ctx)
+  | EAppFormula (e, x)    -> appFormula (eval e ctx) (eval x ctx)
+
+and appFormula v x = match v with
+  | VPLam f -> app (f, x)
+  | _       -> let (_, u0, u1) = extPathP (inferV v) in
+    begin match x with
+      | VLeft  -> u0
+      | VRight -> u1
+      | i      -> VAppFormula (v, i)
+    end
 
 and coe p =
   let i = freshName "ι" in let t = app (p, Var (i, VI)) in
@@ -100,6 +113,8 @@ and getRho ctx x = match Env.find_opt x ctx with
   | Some (_, _, Exp e)   -> eval e ctx
   | None                 -> raise (VariableNotFound x)
 
+and act e i ctx = eval (EAppFormula (e, i)) ctx
+
 (* This is part of evaluator, not type checker *)
 and inferV v = traceInferV v; match v with
   | Var (_, t) -> t
@@ -116,8 +131,10 @@ and inferV v = traceInferV v; match v with
   | VBot -> VKan Z.zero | VBotRec v -> implv VBot v
   | VI -> VKan Z.zero | VLeft | VRight -> VI
   | VCoe t -> inferCoe t
-  | VPathP t -> let i = Var (freshName "ι", VI) in
-    inferPathP (extKan (inferV (app (t, i)))) t
+  | VPathP t -> inferPathP (extKan (inferV (app (t, freshDim ())))) t
+  | VAppFormula (f, x) -> let (p, _, _) = extPathP (inferV f) in app (p, x)
+  | VPLam f -> let t = VLam (VI, (freshName "ι", fun i -> inferV (app (f, i)))) in
+    VApp (VApp (VPathP t, app (f, VLeft)), app (f, VRight))
   | VPair _ | VHole -> raise (InferVError v)
 
 and inferCoe t = VPi (VI, (freshName "ι", fun i -> implv (app (t, VLeft)) (app (t, i))))
@@ -178,6 +195,9 @@ and conv v1 v2 : bool = traceConv v1 v2;
     | VRight, VRight -> true
     | VCoe u, VCoe v -> conv u v
     | VPathP u, VPathP v -> conv u v
+    | VPLam f, VPLam g -> conv f g
+    | VPLam f, v | v, VPLam f -> let i = freshDim () in conv (appFormula v i) (app (f, i))
+    | VAppFormula (f, x), VAppFormula (g, y) -> conv f g && conv x y
     | _, _ -> false
   end
 
@@ -198,6 +218,16 @@ and check ctx (e0 : exp) (t0 : value) =
   | EPair (e1, e2), VSig (t, (_, g)) ->
     ignore (extKan (inferV t));
     check ctx e1 t; check ctx e2 (g (eval e1 ctx))
+  | e, VApp (VApp (VPathP p, u0), u1) ->
+    let v0 = act e ELeft  ctx in
+    let v1 = act e ERight ctx in
+    let i = freshName "ι" in
+    let x = EVar i in
+    let v = Var (i, VI) in
+
+    let ctx' = upLocal ctx i VI v in
+    check ctx' (rbV (act e x ctx')) (app (p, v));
+    eqNf v0 u0; eqNf v1 u1
   | EHole, v -> traceHole v ctx
   | e, t -> eqNf (infer ctx e) t
   with ex -> Printf.printf "When trying to typecheck\n  %s\nAgainst type\n  %s\n" (showExp e0) (showValue t0); raise ex
@@ -224,6 +254,11 @@ and infer ctx e : value = traceInfer e; try match e with
     let n = extKan (g (Var (p, t))) in eqNf k (implv VI (VKan n)); inferCoe (eval e ctx)
   | EPathP e -> let k = infer ctx e in let (t, (p, g)) = extPi k in
     let n = extKan (g (Var (p, t))) in eqNf k (implv VI (VKan n)); inferPathP n (eval e ctx)
+  | EAppFormula (f, x) -> check ctx x VI; let (p, _, _) = extPathP (infer ctx (rbV (eval f ctx))) in
+    app (p, eval x ctx)
+  | EPLam f -> let g = eval f ctx in
+    let t = VLam (VI, (freshName "ι", fun i -> infer ctx (rbV (app (g, i))))) in
+    VApp (VApp (VPathP t, app (g, VLeft)), app (g, VRight))
   | EPair _ | EHole -> raise (InferError e)
   with ex -> Printf.printf "When trying to infer type of\n  %s\n" (showExp e); raise ex
 
@@ -254,12 +289,12 @@ and mem x = function
 
   | VFst e   | VSnd e    | VNInd e
   | VZInd e  | VBotRec e | VCoe e
-  | VPathP e -> mem x e
+  | VPathP e | VPLam e -> mem x e
 
-  | VPair (a, b) | VApp (a, b) -> mem x a || mem x b
+  | VPair (a, b) | VApp (a, b) | VAppFormula (a, b) -> mem x a || mem x b
 
 (* Readback *)
-let rec rbV v : exp = traceRbV v; match v with
+and rbV v : exp = traceRbV v; match v with
   | VLam (t, g)           -> rbVTele eLam t g
   | VPair (u, v)          -> EPair (rbV u, rbV v)
   | VKan u                -> EKan u
@@ -287,6 +322,8 @@ let rec rbV v : exp = traceRbV v; match v with
   | VRight                -> ERight
   | VCoe v                -> ECoe (rbV v)
   | VPathP v              -> EPathP (rbV v)
+  | VPLam v               -> EPLam (rbV v)
+  | VAppFormula (f, x)    -> EAppFormula (rbV f, rbV x)
 
 and rbVTele ctor t (p, g) = let x = Var (p, t) in ctor p (rbV t) (rbV (g x))
 

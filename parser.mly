@@ -28,6 +28,9 @@
     | "left"   -> ELeft
     | "right"  -> ERight
     | x        -> decl x
+
+  let rec pLam e : name list -> exp =
+    function [] -> e | x :: xs -> EPLam (ELam (EI, (x, pLam e xs)))
 %}
 
 %token <string> IDENT
@@ -36,10 +39,11 @@
 %token COMMA COLON IRREF EOF HOLE
 %token DEFEQ PROD ARROW FST SND LAM DEF
 %token MODULE WHERE IMPORT AXIOM
-%token SIGMA PI OPTION
-%token COE PATHP
+%token SIGMA PI OPTION LT GT
+%token COE PATHP APPFORMULA
 %token NIND ZIND BOTREC
 
+%left APPFORMULA
 %right ARROW PROD
 
 %start <Module.file> file
@@ -64,9 +68,11 @@ exp2:
   | LAM telescope COMMA exp2 { telescope eLam $4 $2 }
   | PI telescope COMMA exp2 { telescope ePi $4 $2 }
   | SIGMA telescope COMMA exp2 { telescope eSig $4 $2 }
+  | LT vars GT exp2 { pLam $4 $2 }
   | exp3 { $1 }
 
 exp3:
+  | exp3 APPFORMULA exp3 { EAppFormula ($1, $3) }
   | exp3 ARROW exp3 { impl $1 $3 }
   | exp3 PROD exp3 { prod $1 $3 }
   | exp4 { $1 }

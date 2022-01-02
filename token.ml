@@ -16,3 +16,5 @@ let tokenToString : token -> string = function
   | IMPORT     -> "IMPORT"      | BOTREC     -> "BOTREC"
   | NIND       -> "NIND"        | ZIND       -> "ZIND"
   | COE        -> "COE"         | PATHP      -> "PATHP"
+  | LT         -> "LT"          | GT         -> "GT"
+  | APPFORMULA -> "APPFORMULA"
