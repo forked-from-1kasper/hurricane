@@ -39,6 +39,12 @@ let rec eval (e0 : exp) (ctx : ctx) = traceEval e0; match e0 with
   | EZInd e               -> VZInd (eval e ctx)
   | EBot                  -> VBot
   | EBotRec e             -> VBotRec (eval e ctx)
+  | EI                    -> VI
+  | ELeft                 -> VLeft
+  | ERight                -> VRight
+  | ECoe e                -> coe (eval e ctx)
+
+and coe p = VCoe p
 
 and closByVal ctx p t e v = traceClos e p v;
   (* dirty hack to handle free variables introduced by type checker *)
@@ -100,7 +106,11 @@ and inferV v = traceInferV v; match v with
   | VZ -> VKan Z.zero | VPos -> implv VN VZ | VNeg -> implv VN VZ
   | VZSucc -> implv VZ VZ | VZPred -> implv VZ VZ | VZInd v -> inferZInd v
   | VBot -> VKan Z.zero | VBotRec v -> implv VBot v
+  | VI -> VKan Z.zero | VLeft | VRight -> VI
+  | VCoe t -> inferCoe t
   | VPair _ | VHole -> raise (InferVError v)
+
+and inferCoe t = VPi (VI, (freshName "ι", fun i -> implv (app (t, VLeft)) (app (t, i))))
 
 and inferNInd v =
   let e = fun x -> app (v, x) in
@@ -123,33 +133,6 @@ and inferFst = function
 and inferSnd v = function
   | VSig (_, (_, g)) -> g v
   | u                -> raise (ExpectedSig u)
-
-(* Readback *)
-and rbV v : exp = traceRbV v; match v with
-  | VLam (t, g)           -> rbVTele eLam t g
-  | VPair (u, v)          -> EPair (rbV u, rbV v)
-  | VKan u                -> EKan u
-  | VPi (t, g)            -> rbVTele ePi t g
-  | VSig (t, g)           -> rbVTele eSig t g
-  | Var (x, _)            -> EVar x
-  | VApp (f, x)           -> EApp (rbV f, rbV x)
-  | VFst k                -> EFst (rbV k)
-  | VSnd k                -> ESnd (rbV k)
-  | VHole                 -> EHole
-  | VN                    -> EN
-  | VZero                 -> EZero
-  | VSucc                 -> ESucc
-  | VNInd v               -> ENInd (rbV v)
-  | VZ                    -> EZ
-  | VPos                  -> EPos
-  | VNeg                  -> ENeg
-  | VZSucc                -> EZSucc
-  | VZPred                -> EZPred
-  | VZInd v               -> EZInd (rbV v)
-  | VBot                  -> EBot
-  | VBotRec v             -> EBotRec (rbV v)
-
-and rbVTele ctor t (p, g) = let x = Var (p, t) in ctor p (rbV t) (rbV (g x))
 
 (* Convertibility *)
 and conv v1 v2 : bool = traceConv v1 v2;
@@ -178,6 +161,10 @@ and conv v1 v2 : bool = traceConv v1 v2;
     | VZInd u, VZInd v -> conv u v
     | VBot, VBot -> true
     | VBotRec u, VBotRec v -> conv u v
+    | VI, VI -> true
+    | VLeft, VLeft -> true
+    | VRight, VRight -> true
+    | VCoe u, VCoe v -> conv u v
     | _, _ -> false
   end
 
@@ -219,6 +206,9 @@ and infer ctx e : value = traceInfer e; try match e with
   | EZSucc -> implv VZ VZ | EZPred -> implv VZ VZ
   | EZInd e -> inferInd false ctx VZ e inferZInd
   | EBot -> VKan Z.zero | EBotRec e -> ignore (extKan (infer ctx e)); implv VBot (eval e ctx)
+  | EI -> VKan Z.zero | ELeft | ERight -> VI
+  | ECoe e -> let k = infer ctx e in let (t, (p, g)) = extPi k in
+    let n = extKan (g (Var (p, t))) in eqNf k (implv VI (VKan n)); inferCoe (eval e ctx)
   | EPair _ | EHole -> raise (InferError e)
   with ex -> Printf.printf "When trying to infer type of\n  %s\n" (showExp e); raise ex
 
@@ -244,10 +234,44 @@ and mem x = function
   | VBot   | VKan _ | VHole
   | VN     | VZero  | VSucc
   | VZ     | VPos   | VNeg
+  | VI     | VLeft  | VRight
   | VZSucc | VZPred -> false
 
-  | VFst e | VSnd e | VNInd e | VZInd e | VBotRec e -> mem x e
+  | VFst e  | VSnd e    | VNInd e
+  | VZInd e | VBotRec e | VCoe e -> mem x e
 
   | VPair (a, b) | VApp (a, b) -> mem x a || mem x b
 
 and mem2 x y v = mem x v || mem y v
+
+(* Readback *)
+let rec rbV v : exp = traceRbV v; match v with
+  | VLam (t, g)           -> rbVTele eLam t g
+  | VPair (u, v)          -> EPair (rbV u, rbV v)
+  | VKan u                -> EKan u
+  | VPi (t, g)            -> rbVTele ePi t g
+  | VSig (t, g)           -> rbVTele eSig t g
+  | Var (x, _)            -> EVar x
+  | VApp (f, x)           -> EApp (rbV f, rbV x)
+  | VFst k                -> EFst (rbV k)
+  | VSnd k                -> ESnd (rbV k)
+  | VHole                 -> EHole
+  | VN                    -> EN
+  | VZero                 -> EZero
+  | VSucc                 -> ESucc
+  | VNInd v               -> ENInd (rbV v)
+  | VZ                    -> EZ
+  | VPos                  -> EPos
+  | VNeg                  -> ENeg
+  | VZSucc                -> EZSucc
+  | VZPred                -> EZPred
+  | VZInd v               -> EZInd (rbV v)
+  | VBot                  -> EBot
+  | VBotRec v             -> EBotRec (rbV v)
+  | VI                    -> EI
+  | VLeft                 -> ELeft
+  | VRight                -> ERight
+  | VCoe v                -> ECoe (rbV v)
+
+and rbVTele ctor t (p, g) = let x = Var (p, t) in ctor p (rbV t) (rbV (g x))
+

@@ -5,6 +5,7 @@ type exp =
   | EVar of name | EHole                                                   (* variables *)
   | EPi of exp * (name * exp) | ELam of exp * (name * exp) | EApp of exp * exp     (* Π *)
   | ESig of exp * (name * exp) | EPair of exp * exp | EFst of exp | ESnd of exp    (* Σ *)
+  | EI | ELeft | ERight | ECoe of exp                                              (* I *)
   | EN | EZero | ESucc | ENInd of exp                                              (* N *)
   | EZ | EPos | ENeg | EZInd of exp | EZSucc | EZPred                              (* Z *)
   | EBot | EBotRec of exp                                                          (* ⊥ *)
@@ -18,6 +19,7 @@ type value =
   | Var of name * value | VHole
   | VPi of value * clos | VLam of value * clos | VApp of value * value
   | VSig of value * clos | VPair of value * value | VFst of value | VSnd of value
+  | VI | VLeft | VRight | VCoe of value
   | VN | VZero | VSucc | VNInd of value
   | VZ | VPos | VNeg | VZInd of value | VZSucc | VZPred
   | VBot | VBotRec of value
@@ -57,8 +59,9 @@ let rec ppExp paren e = let x = match e with
   | EFst exp -> ppExp true exp ^ ".1"
   | ESnd exp -> ppExp true exp ^ ".2"
   | EApp (f, x) -> Printf.sprintf "%s %s" (showExp f) (ppExp true x)
-  | EVar p -> showName p
-  | EHole -> "?"
+  | EVar p -> showName p | EHole -> "?"
+  | EI -> "I" | ELeft -> "left" | ERight -> "right"
+  | ECoe e -> Printf.sprintf "coe %s" (ppExp true e)
   | EN -> "N" | EZero -> "zero" | ESucc -> "succ"
   | ENInd e -> Printf.sprintf "N-ind %s" (ppExp true e)
   | EZ -> "Z" | EPos -> "pos" | ENeg -> "neg" | EZSucc -> "Z-succ" | EZPred -> "Z-pred"
@@ -68,7 +71,8 @@ let rec ppExp paren e = let x = match e with
   | EKan _ | EVar _  | EFst _ | ESnd _
   | EHole  | EPair _ | EBot
   | EN     | EZero   | ESucc
-  | EZ     | EPos    | ENeg -> x
+  | EZ     | EPos    | ENeg
+  | EI     | ELeft   | ERight -> x
   | _ -> parens paren x
 
 and showExp e = ppExp false e
@@ -87,8 +91,9 @@ let rec ppValue paren v = let x = match v with
   | VFst v -> ppValue true v ^ ".1"
   | VSnd v -> ppValue true v ^ ".2"
   | VApp (f, x) -> Printf.sprintf "%s %s" (showValue f) (ppValue true x)
-  | Var (p, _) -> showName p
-  | VHole -> "?"
+  | Var (p, _) -> showName p | VHole -> "?"
+  | VI -> "I" | VLeft -> "left" | VRight -> "right"
+  | VCoe v -> Printf.sprintf "coe %s" (ppValue true v)
   | VN -> "N" | VZero -> "zero" | VSucc -> "succ"
   | VNInd e -> Printf.sprintf "N-ind %s" (ppValue true e)
   | VZ -> "Z" | VPos -> "pos" | VNeg -> "neg" | VZSucc -> "Z-succ" | VZPred -> "Z-pred"
@@ -98,7 +103,8 @@ let rec ppValue paren v = let x = match v with
   | VKan _ | Var _   | VFst _ | VSnd _ 
   | VHole  | VPair _ | VBot
   | VN     | VZero   | VSucc
-  | VZ     | VPos    | VNeg -> x
+  | VZ     | VPos    | VNeg
+  | VI     | VLeft   | VRight -> x
   | _ -> parens paren x
 
 and showValue v = ppValue false v

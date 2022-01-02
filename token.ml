@@ -15,3 +15,4 @@ let tokenToString : token -> string = function
   | WHERE      -> "WHERE"       | MODULE     -> "MODULE"
   | IMPORT     -> "IMPORT"      | BOTREC     -> "BOTREC"
   | NIND       -> "NIND"        | ZIND       -> "ZIND"
+  | COE        -> "COE"
