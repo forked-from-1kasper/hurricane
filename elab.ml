@@ -33,6 +33,7 @@ let imax a b = match a, b with
 
 let implv a b = VPi (a, (Irrefutable, fun _ -> b))
 let prodv a b = VSig (a, (Irrefutable, fun _ -> b))
+let pathv t a b = VApp (VApp (VPathP (VLam (VI, (Irrefutable, fun _ -> t))), a), b)
 
 let succv n = VApp (VSucc, n)
 let posv  n = VApp (VPos,  n)
@@ -72,7 +73,8 @@ let rec salt (ns : name Env.t) : exp -> exp = function
   | ERight                -> ERight
   | ECoe e                -> ECoe (salt ns e)
   | EPLam e               -> EPLam (salt ns e)
-  | EAppFormula (p, i)   -> EAppFormula (salt ns p, salt ns i)
+  | EAppFormula (p, i)    -> EAppFormula (salt ns p, salt ns i)
+  | EIso e                -> EIso (salt ns e)
 
 and saltTele ctor ns p a b =
   let x = fresh p in ctor x (salt ns a) (salt (Env.add p x ns) b)

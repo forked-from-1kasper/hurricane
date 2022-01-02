@@ -76,5 +76,5 @@ rule main = parse
 | "?"        { HOLE }        | nind       { NIND }
 | zind       { ZIND }        | botrec     { BOTREC }
 | "coe"      { COE }         | "PathP"    { PATHP }
-| "@"        { APPFORMULA }  | ident as s { IDENT s }
-| eof        { EOF }
+| "@"        { APPFORMULA }  | "iso"      { ISO }
+| ident as s { IDENT s }     | eof        { EOF }

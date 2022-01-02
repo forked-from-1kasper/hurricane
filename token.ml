@@ -17,4 +17,4 @@ let tokenToString : token -> string = function
   | NIND       -> "NIND"        | ZIND       -> "ZIND"
   | COE        -> "COE"         | PATHP      -> "PATHP"
   | LT         -> "LT"          | GT         -> "GT"
-  | APPFORMULA -> "APPFORMULA"
+  | APPFORMULA -> "APPFORMULA"  | ISO        -> "ISO"

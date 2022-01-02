@@ -50,6 +50,7 @@ let rec eval (e0 : exp) (ctx : ctx) = traceEval e0; match e0 with
   | EPathP e              -> VPathP (eval e ctx)
   | EPLam e               -> VPLam (eval e ctx)
   | EAppFormula (e, x)    -> appFormula (eval e ctx) (eval x ctx)
+  | EIso e                -> VIso (eval e ctx)
 
 and appFormula v x = match v with
   | VPLam f -> app (f, x)
@@ -135,7 +136,22 @@ and inferV v = traceInferV v; match v with
   | VAppFormula (f, x) -> let (p, _, _) = extPathP (inferV f) in app (p, x)
   | VPLam f -> let t = VLam (VI, (freshName "ι", fun i -> inferV (app (f, i)))) in
     VApp (VApp (VPathP t, app (f, VLeft)), app (f, VRight))
+  | VIso t -> inferIso (extKan (inferV t)) t
   | VPair _ | VHole -> raise (InferVError v)
+
+and linv a f g = let x = freshName "x" in
+  VPi (a, (x, fun x -> pathv a (app (g, app (f, x))) x))
+
+and rinv b f h = let x = freshName "x" in
+  VPi (b, (x, fun x -> pathv b (app (f, app (h, x))) x))
+
+and inferIso k a = let f = freshName "f" in let g = freshName "g" in
+  VPi (VKan k, (freshName "B", fun b ->
+    VPi (implv a b, (f, fun f ->
+      VPi (implv b a, (g, fun g ->
+        implv (linv a f g)
+          (implv (rinv b f g)
+            (implv VI (VKan k)))))))))
 
 and inferCoe t = VPi (VI, (freshName "ι", fun i -> implv (app (t, VLeft)) (app (t, i))))
 
@@ -198,6 +214,7 @@ and conv v1 v2 : bool = traceConv v1 v2;
     | VPLam f, VPLam g -> conv f g
     | VPLam f, v | v, VPLam f -> let i = freshDim () in conv (appFormula v i) (app (f, i))
     | VAppFormula (f, x), VAppFormula (g, y) -> conv f g && conv x y
+    | VIso u, VIso v -> conv u v
     | _, _ -> false
   end
 
@@ -259,6 +276,7 @@ and infer ctx e : value = traceInfer e; try match e with
   | EPLam f -> let g = eval f ctx in
     let t = VLam (VI, (freshName "ι", fun i -> infer ctx (rbV (app (g, i))))) in
     VApp (VApp (VPathP t, app (g, VLeft)), app (g, VRight))
+  | EIso t -> inferIso (extKan (infer ctx t)) (eval t ctx)
   | EPair _ | EHole -> raise (InferError e)
   with ex -> Printf.printf "When trying to infer type of\n  %s\n" (showExp e); raise ex
 
@@ -289,7 +307,7 @@ and mem x = function
 
   | VFst e   | VSnd e    | VNInd e
   | VZInd e  | VBotRec e | VCoe e
-  | VPathP e | VPLam e -> mem x e
+  | VPathP e | VPLam e   | VIso e -> mem x e
 
   | VPair (a, b) | VApp (a, b) | VAppFormula (a, b) -> mem x a || mem x b
 
@@ -324,6 +342,7 @@ and rbV v : exp = traceRbV v; match v with
   | VPathP v              -> EPathP (rbV v)
   | VPLam v               -> EPLam (rbV v)
   | VAppFormula (f, x)    -> EAppFormula (rbV f, rbV x)
+  | VIso v                -> EIso (rbV v)
 
 and rbVTele ctor t (p, g) = let x = Var (p, t) in ctor p (rbV t) (rbV (g x))
 

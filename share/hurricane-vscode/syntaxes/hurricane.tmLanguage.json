@@ -18,7 +18,7 @@
             "name": "keyword.other.hurricane"
         },
         {
-            "match": "(?<=^|[\\s(),])(λ|Σ|Π|forall|sigma|left|right|coe|PathP)(?=$|[\\s(),])",
+            "match": "(?<=^|[\\s(),])(λ|Σ|Π|forall|sigma|left|right|coe|PathP|iso)(?=$|[\\s(),])",
             "name": "keyword.control.hurricane"
         },
         {

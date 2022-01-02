@@ -7,6 +7,7 @@ type exp =
   | ESig of exp * (name * exp) | EPair of exp * exp | EFst of exp | ESnd of exp    (* Σ *)
   | EI | ELeft | ERight | ECoe of exp                                       (* interval *)
   | EPathP of exp | EPLam of exp | EAppFormula of exp * exp                     (* path *)
+  | EIso of exp                                                           (* univalence *)
   | EN | EZero | ESucc | ENInd of exp                                              (* N *)
   | EZ | EPos | ENeg | EZInd of exp | EZSucc | EZPred                              (* Z *)
   | EBot | EBotRec of exp                                                          (* ⊥ *)
@@ -22,6 +23,7 @@ type value =
   | VSig of value * clos | VPair of value * value | VFst of value | VSnd of value
   | VI | VLeft | VRight | VCoe of value
   | VPathP of value | VPLam of value | VAppFormula of value * value
+  | VIso of value
   | VN | VZero | VSucc | VNInd of value
   | VZ | VPos | VNeg | VZInd of value | VZSucc | VZPred
   | VBot | VBotRec of value
@@ -68,6 +70,7 @@ let rec ppExp paren e = let x = match e with
   | EPLam (ELam (_, (i, e))) -> Printf.sprintf "<%s> %s" (showName i) (showExp e)
   | EPLam _ -> failwith "showExp: unreachable code was reached"
   | EAppFormula (f, x) -> Printf.sprintf "%s @ %s" (ppExp true f) (ppExp true x)
+  | EIso e -> Printf.sprintf "iso %s" (ppExp true e)
   | EN -> "N" | EZero -> "zero" | ESucc -> "succ"
   | ENInd e -> Printf.sprintf "N-ind %s" (ppExp true e)
   | EZ -> "Z" | EPos -> "pos" | ENeg -> "neg" | EZSucc -> "Z-succ" | EZPred -> "Z-pred"
@@ -104,6 +107,7 @@ let rec ppValue paren v = let x = match v with
   | VPLam (VLam (_, (p, clos))) -> Printf.sprintf "<%s> %s" (showName p) (showClos p VI clos)
   | VPLam _ -> failwith "showExp: unreachable code was reached"
   | VAppFormula (f, x) -> Printf.sprintf "%s @ %s" (ppValue true f) (ppValue true x)
+  | VIso v -> Printf.sprintf "iso %s" (ppValue true v)
   | VN -> "N" | VZero -> "zero" | VSucc -> "succ"
   | VNInd e -> Printf.sprintf "N-ind %s" (ppValue true e)
   | VZ -> "Z" | VPos -> "pos" | VNeg -> "neg" | VZSucc -> "Z-succ" | VZPred -> "Z-pred"
