@@ -63,6 +63,7 @@ let rec salt (ns : name Env.t) : exp -> exp = function
   | EBot                  -> EBot
   | EBotRec e             -> EBotRec (salt ns e)
   | EI                    -> EI
+  | EPathP e              -> EPathP (salt ns e)
   | ELeft                 -> ELeft
   | ERight                -> ERight
   | ECoe e                -> ECoe (salt ns e)

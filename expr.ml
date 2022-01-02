@@ -5,7 +5,8 @@ type exp =
   | EVar of name | EHole                                                   (* variables *)
   | EPi of exp * (name * exp) | ELam of exp * (name * exp) | EApp of exp * exp     (* Π *)
   | ESig of exp * (name * exp) | EPair of exp * exp | EFst of exp | ESnd of exp    (* Σ *)
-  | EI | ELeft | ERight | ECoe of exp                                              (* I *)
+  | EI | ELeft | ERight | ECoe of exp                                       (* interval *)
+  | EPathP of exp                                                               (* path *)
   | EN | EZero | ESucc | ENInd of exp                                              (* N *)
   | EZ | EPos | ENeg | EZInd of exp | EZSucc | EZPred                              (* Z *)
   | EBot | EBotRec of exp                                                          (* ⊥ *)
@@ -20,6 +21,7 @@ type value =
   | VPi of value * clos | VLam of value * clos | VApp of value * value
   | VSig of value * clos | VPair of value * value | VFst of value | VSnd of value
   | VI | VLeft | VRight | VCoe of value
+  | VPathP of value
   | VN | VZero | VSucc | VNInd of value
   | VZ | VPos | VNeg | VZInd of value | VZSucc | VZPred
   | VBot | VBotRec of value
@@ -62,6 +64,7 @@ let rec ppExp paren e = let x = match e with
   | EVar p -> showName p | EHole -> "?"
   | EI -> "I" | ELeft -> "left" | ERight -> "right"
   | ECoe e -> Printf.sprintf "coe %s" (ppExp true e)
+  | EPathP e -> Printf.sprintf "PathP %s" (ppExp true e)
   | EN -> "N" | EZero -> "zero" | ESucc -> "succ"
   | ENInd e -> Printf.sprintf "N-ind %s" (ppExp true e)
   | EZ -> "Z" | EPos -> "pos" | ENeg -> "neg" | EZSucc -> "Z-succ" | EZPred -> "Z-pred"
@@ -94,6 +97,7 @@ let rec ppValue paren v = let x = match v with
   | Var (p, _) -> showName p | VHole -> "?"
   | VI -> "I" | VLeft -> "left" | VRight -> "right"
   | VCoe v -> Printf.sprintf "coe %s" (ppValue true v)
+  | VPathP v -> Printf.sprintf "PathP %s" (ppValue true v)
   | VN -> "N" | VZero -> "zero" | VSucc -> "succ"
   | VNInd e -> Printf.sprintf "N-ind %s" (ppValue true e)
   | VZ -> "Z" | VPos -> "pos" | VNeg -> "neg" | VZSucc -> "Z-succ" | VZPred -> "Z-pred"

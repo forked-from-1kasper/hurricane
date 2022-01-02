@@ -45,6 +45,7 @@ let rec eval (e0 : exp) (ctx : ctx) = traceEval e0; match e0 with
   | ELeft                 -> VLeft
   | ERight                -> VRight
   | ECoe e                -> coe (eval e ctx)
+  | EPathP e              -> VPathP (eval e ctx)
 
 and coe p =
   let i = freshName "ι" in let t = app (p, Var (i, VI)) in
@@ -115,9 +116,13 @@ and inferV v = traceInferV v; match v with
   | VBot -> VKan Z.zero | VBotRec v -> implv VBot v
   | VI -> VKan Z.zero | VLeft | VRight -> VI
   | VCoe t -> inferCoe t
+  | VPathP t -> let i = Var (freshName "ι", VI) in
+    inferPathP (extKan (inferV (app (t, i)))) t
   | VPair _ | VHole -> raise (InferVError v)
 
 and inferCoe t = VPi (VI, (freshName "ι", fun i -> implv (app (t, VLeft)) (app (t, i))))
+
+and inferPathP n t = implv (app (t, VLeft)) (implv (app (t, VRight)) (VKan n))
 
 and inferNInd v =
   let e = fun x -> app (v, x) in
@@ -172,6 +177,7 @@ and conv v1 v2 : bool = traceConv v1 v2;
     | VLeft, VLeft -> true
     | VRight, VRight -> true
     | VCoe u, VCoe v -> conv u v
+    | VPathP u, VPathP v -> conv u v
     | _, _ -> false
   end
 
@@ -216,6 +222,8 @@ and infer ctx e : value = traceInfer e; try match e with
   | EI -> VKan Z.zero | ELeft | ERight -> VI
   | ECoe e -> let k = infer ctx e in let (t, (p, g)) = extPi k in
     let n = extKan (g (Var (p, t))) in eqNf k (implv VI (VKan n)); inferCoe (eval e ctx)
+  | EPathP e -> let k = infer ctx e in let (t, (p, g)) = extPi k in
+    let n = extKan (g (Var (p, t))) in eqNf k (implv VI (VKan n)); inferPathP n (eval e ctx)
   | EPair _ | EHole -> raise (InferError e)
   with ex -> Printf.printf "When trying to infer type of\n  %s\n" (showExp e); raise ex
 
@@ -244,8 +252,9 @@ and mem x = function
   | VI     | VLeft  | VRight
   | VZSucc | VZPred -> false
 
-  | VFst e  | VSnd e    | VNInd e
-  | VZInd e | VBotRec e | VCoe e -> mem x e
+  | VFst e   | VSnd e    | VNInd e
+  | VZInd e  | VBotRec e | VCoe e
+  | VPathP e -> mem x e
 
   | VPair (a, b) | VApp (a, b) -> mem x a || mem x b
 
@@ -277,6 +286,7 @@ let rec rbV v : exp = traceRbV v; match v with
   | VLeft                 -> ELeft
   | VRight                -> ERight
   | VCoe v                -> ECoe (rbV v)
+  | VPathP v              -> EPathP (rbV v)
 
 and rbVTele ctor t (p, g) = let x = Var (p, t) in ctor p (rbV t) (rbV (g x))
 

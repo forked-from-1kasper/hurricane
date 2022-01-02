@@ -74,5 +74,5 @@ rule main = parse
 | prod       { PROD }        | kan as s   { KAN (getLevel s) }
 | "?"        { HOLE }        | nind       { NIND }
 | zind       { ZIND }        | botrec     { BOTREC }
-| "coe"      { COE }         | ident as s { IDENT s }
-| eof        { EOF }
+| "coe"      { COE }         | "PathP"    { PATHP }
+| ident as s { IDENT s }     | eof        { EOF }

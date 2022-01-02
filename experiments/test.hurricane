@@ -4,3 +4,5 @@ def id (A : U) : U := A
 def idfun (A : U) (a : A) : A := a
 
 def ∘ (A B C : U) (f : B → C) (g : A → B) : A → C := λ (x : A), f (g x)
+
+def Path (A : U) (a b : A) := PathP (λ (i : I), A) a b

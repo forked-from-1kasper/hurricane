@@ -37,7 +37,8 @@
 %token DEFEQ PROD ARROW FST SND LAM DEF
 %token MODULE WHERE IMPORT AXIOM
 %token SIGMA PI OPTION
-%token COE NIND ZIND BOTREC
+%token COE PATHP
+%token NIND ZIND BOTREC
 
 %right ARROW PROD
 
@@ -76,6 +77,7 @@ exp4:
 exp5 :
   | exp5 exp6 { EApp ($1, $2) }
   | COE exp6 { ECoe $2 }
+  | PATHP exp6 { EPathP $2 }
   | NIND exp6 { ENInd $2 }
   | ZIND exp6 { EZInd $2 }
   | BOTREC exp6 { EBotRec $2 }
