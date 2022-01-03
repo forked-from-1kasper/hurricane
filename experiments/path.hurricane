@@ -15,6 +15,9 @@ def is-set (A : U) : U := Π (a b : A), is-prop (Path A a b)
 def is-groupoid (A : U) : U := Π (a b : A), is-set (Path A a b)
 def is-2-groupoid (A : U) : U := Π (a b : A), is-groupoid (Path A a b)
 
+def symm (A : U) (a b : A) (p : Path A a b) : Path A b a :=
+coe (λ (i : I), Path A (p @ i) a) right (<_> a)
+
 def transport (A : U) (P : A → U) (a b : A) (p : Path A a b) : P a → P b :=
 coe (λ (i : I), P (p @ i)) right
 
@@ -36,3 +39,15 @@ transport (singl A a) (λ (z : singl A a), P a z.1 z.2) (a, <_> a) (b, p) (contr
 def J′ (A : U) (a : A) (P : Π (b : A), Path A a b → U)
   (d : P a (<_> a)) (b : A) (p : Path A a b) : P b p :=
 transport (singl A a) (λ (z : singl A a), P z.1 z.2) (a, <_> a) (b, p) (contr A a b p) d
+
+def seg : Path I left right :=
+<i> i
+
+def negate (i : I) :=
+symm I left right seg @ i
+
+def coe⁻¹ (A : I → U) (i : I) : A right → A i :=
+coe (λ (j : I), A (join i (negate j))) right
+
+def coe² (A : I → U) (i j : I) (x : A i) : A j :=
+coe⁻¹ A j (coe (λ (k : I), A (join i k)) right x)
