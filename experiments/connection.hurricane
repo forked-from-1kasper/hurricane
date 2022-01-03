@@ -1,0 +1,19 @@
+module connection where
+
+def Path (A : U) (a b : A) := PathP (λ (i : I), A) a b
+
+def ρ (i j : I) := coe (λ (x : I), Path I left x) j (<_> left) @ i
+
+def meet (i j : I) :=
+coe (λ (i : I), PathP (λ (j : I), Path I left (ρ i j))
+  (<_> left) (<j> ρ i j)) right (<_ _> left) @ i @ j
+
+def join (i j : I) :=
+coe (λ (i : I), PathP (λ (j : I), Path I (meet i j) i)
+  (<k> meet i k) (<_> i)) right (<_ _> left) @ i @ j
+
+def conn-∧ (A : U) (a b : A) (p : Path A a b) (i : I) : Path A a (p @ i) :=
+<j> p @ meet i j
+
+def conn-∨ (A : U) (a b : A) (p : Path A a b) (i : I) : Path A (p @ i) b :=
+<j> p @ join i j

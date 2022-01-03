@@ -1,0 +1,38 @@
+module path where
+
+import experiments/connection
+
+def ¬ (A : U) := A → ⊥
+
+def id (A : U) : U := A
+def idfun (A : U) (a : A) : A := a
+
+def ∘ (A B C : U) (f : B → C) (g : A → B) : A → C := λ (x : A), f (g x)
+
+def is-contr (A: U) : U := Σ (x : A), Π (y : A), Path A x y
+def is-prop (A : U) : U := Π (a b : A), Path A a b
+def is-set (A : U) : U := Π (a b : A), is-prop (Path A a b)
+def is-groupoid (A : U) : U := Π (a b : A), is-set (Path A a b)
+def is-2-groupoid (A : U) : U := Π (a b : A), is-groupoid (Path A a b)
+
+def transport (A : U) (P : A → U) (a b : A) (p : Path A a b) : P a → P b :=
+coe (λ (i : I), P (p @ i)) right
+
+def ap (A B : U) (f : A → B) (a b : A) (p : Path A a b) : Path B (f a) (f b) :=
+<i> f (p @ i)
+
+def singl (A : U) (a : A) := Σ (b : A), Path A a b
+
+def contr (A : U) (a b : A) (p : Path A a b) : Path (singl A a) (a, <_> a) (b, p) :=
+<i> (p @ i, <j> p @ meet i j)
+
+def contr-singl (A : U) (a : A) : is-contr (singl A a) :=
+((a, <_> a), λ (z : singl A a), contr A a z.1 z.2)
+
+def J (A : U) (P : Π (a b : A), Path A a b → U)
+  (a : A) (d : P a a (<_> a)) (b : A) (p : Path A a b) : P a b p :=
+transport (singl A a) (λ (z : singl A a), P a z.1 z.2) (a, <_> a) (b, p) (contr A a b p) d
+
+def J′ (A : U) (a : A) (P : Π (b : A), Path A a b → U)
+  (d : P a (<_> a)) (b : A) (p : Path A a b) : P b p :=
+transport (singl A a) (λ (z : singl A a), P z.1 z.2) (a, <_> a) (b, p) (contr A a b p) d
