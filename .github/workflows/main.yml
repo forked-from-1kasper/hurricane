@@ -29,7 +29,6 @@ jobs:
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
 
-      - run: opam depext hurricane --yes
       - run: opam install . --deps-only
       - run: opam exec -- dune build
       - run: opam install .
