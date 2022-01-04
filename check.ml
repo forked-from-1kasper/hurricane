@@ -285,7 +285,7 @@ and infer ctx e : value = traceInfer e; try match e with
   | EPLam (ELam (EI, (i, e))) ->
     let ctx' = upLocal ctx i VI (Var (i, VI)) in ignore (infer ctx' e);
     let g = fun j -> eval e (upLocal ctx i VI j) in
-    let t = VLam (VI, (freshName "ι", inferV >> g)) in
+    let t = VLam (VI, (freshName "ι", g >> inferV)) in
     VApp (VApp (VPathP t, g VLeft), g VRight)
   | EIso t -> inferIso (extKan (infer ctx t)) (eval t ctx)
   | EPLam _ | EPair _ | EHole -> raise (InferError e)
