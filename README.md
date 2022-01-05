@@ -3,7 +3,7 @@ Hurricane
 
 [![Actions](https://github.com/groupoid/hurricane/workflows/opam/badge.svg)](https://github.com/groupoid/hurricane/actions)
 
-Minimal HoTT-I Type Checker.
+Minimal Implementation of HoTT-I Type System with definitional Path-β
 
 HoTT-I
 ------

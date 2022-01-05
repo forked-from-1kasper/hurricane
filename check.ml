@@ -250,16 +250,11 @@ and check ctx (e0 : exp) (t0 : value) =
   | EPair (e1, e2), VSig (t, (_, g)) ->
     ignore (extKan (inferV t));
     check ctx e1 t; check ctx e2 (g (eval e1 ctx))
-  | e, VApp (VApp (VPathP p, u0), u1) ->
-    let v0 = act e ELeft  ctx in
-    let v1 = act e ERight ctx in
-    let i = freshName "ι" in
-    let x = EVar i in
-    let v = Var (i, VI) in
-
-    let ctx' = upLocal ctx i VI v in
-    check ctx' (rbV (act e x ctx')) (app (p, v));
-    eqNf v0 u0; eqNf v1 u1
+  | EPLam (ELam (EI, (i, e))), VApp (VApp (VPathP p, u0), u1) ->
+    let v = Var (i, VI) in let ctx' = upLocal ctx i VI v in
+    let v0 = eval e (upLocal ctx i VI VLeft) in
+    let v1 = eval e (upLocal ctx i VI VRight) in
+    check ctx' e (app (p, v)); eqNf v0 u0; eqNf v1 u1
   | e, t -> eqNf (infer ctx e) t
   with ex -> Printf.printf "When trying to typecheck\n  %s\nAgainst type\n  %s\n" (showExp e0) (showValue t0); raise ex
 
@@ -287,15 +282,13 @@ and infer ctx e : value = traceInfer e; try match e with
     let n = extKan (g (Var (p, t))) in eqNf k (implv VI (VKan n)); inferPathP n (eval e ctx)
   | EAppFormula (f, x) -> check ctx x VI;
     let (p, _, _) = extPathP (infer ctx f) in app (p, eval x ctx)
-  | EPLam f -> let g = eval f ctx in
-    let i = freshName "ι" in let v = Var (i, VI) in
-    let ctx' = upLocal ctx i VI v in
-    ignore (infer ctx' (rbV (app (g, v))));
-
-    let t = VLam (VI, (freshName "ι", fun i -> inferV (app (g, i)))) in
-    VApp (VApp (VPathP t, app (g, VLeft)), app (g, VRight))
+  | EPLam (ELam (EI, (i, e))) ->
+    let ctx' = upLocal ctx i VI (Var (i, VI)) in ignore (infer ctx' e);
+    let g = fun j -> eval e (upLocal ctx i VI j) in
+    let t = VLam (VI, (freshName "ι", g >> inferV)) in
+    VApp (VApp (VPathP t, g VLeft), g VRight)
   | EIso t -> inferIso (extKan (infer ctx t)) (eval t ctx)
-  | EPair _ | EHole -> raise (InferError e)
+  | EPLam _ | EPair _ | EHole -> raise (InferError e)
   with ex -> Printf.printf "When trying to infer type of\n  %s\n" (showExp e); raise ex
 
 and inferInd fibrant ctx t e f =
@@ -330,7 +323,7 @@ and mem x = function
   | VPair (a, b) | VApp (a, b) | VAppFormula (a, b) -> mem x a || mem x b
 
 (* Readback *)
-and rbV v : exp = traceRbV v; match v with
+let rec rbV v : exp = traceRbV v; match v with
   | VLam (t, g)           -> rbVTele eLam t g
   | VPair (u, v)          -> EPair (rbV u, rbV v)
   | VKan u                -> EKan u
