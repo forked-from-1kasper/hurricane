@@ -1,0 +1,22 @@
+opam-version: "2.0"
+name: "hurricane"
+version: "0.1.0"
+maintainer: "Namdak Tonpa <maxim@synrc.com>"
+authors: [
+  "Namdak Tonpa @5HT"
+  "Siegmentation Fault @siegment"
+]
+homepage: "https://groupoid.space/homotopy/"
+bug-reports: "https://github.com/groupoid/hurricane/issues"
+dev-repo: "git+https://github.com/groupoid/hurricane"
+synopsis: "Minimal Implementation of HoTT-I Type System with definitional Path-β"
+license: "ISC"
+depends: [
+  "dune" {>= "2.0"}
+  "zarith" {>= "1.12"}
+  "ocaml" {>= "4.10"}
+  "menhir" {>= "20200123"}
+]
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+]

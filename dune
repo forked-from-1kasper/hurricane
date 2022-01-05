@@ -1,0 +1,5 @@
+(env (dev (flags (:standard -warn-error -A))))
+(ocamllex lexer)
+(menhir (modules parser))
+(executable (name hurricane) (libraries zarith) (package hurricane) (public_name hurricane))
+(install (files experiments/connection.hurricane experiments/isomorphism.hurricane experiments/fiber.hurricane) (section share) (package hurricane))

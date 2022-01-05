@@ -32,4 +32,4 @@ jobs:
       - run: opam install . --deps-only
       - run: opam exec -- dune build
       - run: opam install .
-      - run: opam exec -- dune exec hurricane silent check experiments/isomorphism.anders
+      - run: opam exec -- dune exec hurricane silent check experiments/isomorphism.hurricane
