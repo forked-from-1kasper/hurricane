@@ -7,8 +7,7 @@ Minimal Implementation of HoTT-I Type System with definitional Path-β
 
 ```OCaml
 type exp =
-  | EKan of Z.t                                                               (* cosmos *)
-  | EVar of name | EHole                                                   (* variables *)
+  | EKan of Z.t | EVar of name | EHole                                        (* cosmos *)
   | EPi of exp * (name * exp) | ELam of exp * (name * exp) | EApp of exp * exp     (* Π *)
   | ESig of exp * (name * exp) | EPair of exp * exp | EFst of exp | ESnd of exp    (* Σ *)
   | EI | ELeft | ERight | ECoe of exp                                       (* interval *)
