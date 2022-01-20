@@ -3,7 +3,7 @@
 
 [![Actions](https://github.com/groupoid/hurricane/workflows/opam/badge.svg)](https://github.com/groupoid/hurricane/actions)
 
-Minimal Implementation of HoTT-I Type System with definitional Path-β
+Minimal Implementation of HoTT-I Type System (of JetBrains Arend) with definitional Path-β
 
 ```OCaml
 type exp =
