@@ -1,5 +1,5 @@
-Hurricane
-=========
+🧊 Hurricane
+============
 
 [![Actions](https://github.com/groupoid/hurricane/workflows/opam/badge.svg)](https://github.com/groupoid/hurricane/actions)
 
@@ -7,15 +7,16 @@ Minimal Implementation of HoTT-I Type System with definitional Path-β
 
 ```OCaml
 type exp =
-  | EKan of Z.t | EVar of name | EHole
-  | EPi of exp * (name * exp) | ELam of exp * (name * exp) | EApp of exp * exp
-  | ESig of exp * (name * exp) | EPair of exp * exp | EFst of exp | ESnd of exp
-  | EI | ELeft | ERight | ECoe of exp
-  | EPathP of exp | EPLam of exp | EAppFormula of exp * exp
-  | EIso of exp
-  | EN | EZero | ESucc | ENInd of exp
-  | EZ | EPos | ENeg | EZInd of exp | EZSucc | EZPred
-  | EBot | EBotRec of exp
+  | EKan of Z.t                                                               (* cosmos *)
+  | EVar of name | EHole                                                   (* variables *)
+  | EPi of exp * (name * exp) | ELam of exp * (name * exp) | EApp of exp * exp     (* Π *)
+  | ESig of exp * (name * exp) | EPair of exp * exp | EFst of exp | ESnd of exp    (* Σ *)
+  | EI | ELeft | ERight | ECoe of exp                                       (* interval *)
+  | EPathP of exp | EPLam of exp | EAppFormula of exp * exp                     (* path *)
+  | EIso of exp                                                           (* univalence *)
+  | EN | EZero | ESucc | ENInd of exp                                              (* N *)
+  | EZ | EPos | ENeg | EZInd of exp | EZSucc | EZPred                              (* Z *)
+  | EBot | EBotRec of exp                                                          (* ⊥ *)
 ```
 
 HoTT-I
