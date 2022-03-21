@@ -1,9 +1,9 @@
-🧊 Hurricane
+Hurricane
 ============
 
 [![Actions](https://github.com/groupoid/hurricane/workflows/opam/badge.svg)](https://github.com/groupoid/hurricane/actions)
 
-Minimal Implementation of HoTT-I Type System (of JetBrains Arend) with definitional Path-β
+Implementation of HoTT-I Type System (of JetBrains Arend).
 
 ```OCaml
 type exp =
@@ -21,11 +21,7 @@ type exp =
 HoTT-I
 ------
 
-Hurricane was built by strictly following these publications:
+Hurricane was built following these publications:
 
 * <a href="https://arxiv.org/pdf/2004.14195.pdf">Models of Homotopy Type Theory with an Interval Type</a> [Valery Isaev]
 
-Authors
--------
-
-* Siegmentation Fault
